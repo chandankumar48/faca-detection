@@ -1,0 +1,100 @@
+# pip install opencv-python
+# pip install opencv-contrib-python
+# pip install pillow
+
+import os
+import tkinter as tk
+from tkinter import filedialog
+import tkinter.messagebox
+from PIL import Image
+from PIL import ImageTk
+import cv2
+
+cwd = os.getcwd()
+
+def display_image(path):
+	image = cv2.imread(path)
+	image = cv2.resize(image, (722,522))
+	image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+	image = Image.fromarray(image)
+	image = ImageTk.PhotoImage(image)
+
+	return image
+
+def detect_face(path):
+	img = cv2.imread(path)
+	img = cv2.resize(img, (722,522))
+	gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+	face_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+	faces = face_classifier.detectMultiScale(gray, 1.0485258, 6)
+
+	print(faces)
+
+	if faces is ():
+		return None
+	else:
+		for (x,y,w,h) in faces:
+			detected = cv2.rectangle(img, (x,y), (x+w, y+h), (127,0,255), 2)
+
+	image = cv2.cvtColor(detected, cv2.COLOR_BGR2RGB)
+	image = Image.fromarray(image)
+	image = ImageTk.PhotoImage(image)
+
+	return image
+
+
+class Application(tk.Frame):
+	def __init__(self, master=None):
+		super().__init__(master)
+		self.master = master
+		self.filepath = ''
+		self.pack()
+		self.create_widgets()
+
+	def create_widgets(self):
+		self.load = tk.Button(self, bg='green', fg='white', font=10)
+		self.load.configure(height=1, width=30)
+		self.load['text'] = 'Load file'
+		self.load['command'] = self.load_image
+		self.load.grid(row=0, column=0, pady=5)
+
+		self.detect = tk.Button(self, bg='green', fg='white', font=10)
+		self.detect.configure(height=1, width=30)
+		self.detect['text'] = 'Detect faces'
+		self.detect['command'] = self.detect_faces
+		self.detect.grid(row=0, column=1, pady=5)
+
+		self.canvas = tk.Canvas(self, width =720, height = 520, bg='#afeeee')
+		self.canvas.create_text(330,250,fill="darkblue",font="Times 40 italic bold",
+                        text="Face detection software")
+		self.canvas.create_text(480,300,fill="darkblue",font="Times 25 italic bold",
+                        text="- by pyGuru")
+		self.canvas.grid(row=1, column=0, columnspan=2, pady=10)
+
+	def load_image(self):
+		self.filepath = filedialog.askopenfilename(
+						initialdir = cwd)
+		if not self.filepath == '':
+			self.image = display_image(self.filepath)
+			self.canvas.create_image(0,0,  anchor=tk.NW, image=self.image)    
+			self.canvas.image = self.image 
+
+	def detect_faces(self):
+		if self.filepath == '':
+			tk.messagebox.showerror('Cant detect faces', 'Load a image first')
+		else:
+			self.detected = detect_face(self.filepath)
+			if self.detected == None:
+				tk.messagebox.showinfo('Face detction', 'No faces found')
+			else:
+				self.canvas.create_image(0,0,  anchor=tk.NW, image=self.detected)    
+				self.canvas.image = self.detected
+			
+
+root = tk.Tk()
+root.geometry('800x600')
+root.wm_title('Face detector')
+
+app = Application(master=root)
+app.mainloop()
